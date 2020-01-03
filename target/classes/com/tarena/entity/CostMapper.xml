@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.CostDao">
+
+	<select id="findAll" resultType="com.tarena.entity.Cost">
+		select * from cost order by cost_id
+	</select>
+
+	<insert id="save" parameterType="com.tarena.entity.Cost">
+	<![CDATA[
+		insert into cost values(
+			cost_seq.nextval,
+			#{name,jdbcType=VARCHAR},
+			#{base_duration,jdbcType=NUMERIC},
+			#{base_cost,jdbcType=NUMERIC},
+			#{unit_cost,jdbcType=NUMERIC},
+			#{status,jdbcType=CHAR},
+			#{descr,jdbcType=VARCHAR},
+			#{creatime,jdbcType=TIMESTAMP},
+			#{startime,jdbcType=TIMESTAMP},
+			#{cost_type,jdbcType=CHAR}
+		)
+	]]>
+	</insert>
+	
+	<select id="findById" parameterType="int" 
+		resultType="com.tarena.entity.Cost">
+		select * from cost where cost_id=#{id}
+	</select>
+	
+	<update id="updateStatus" 
+		parameterType="com.tarena.entity.Cost">
+		update cost set status=#{status} where cost_id=#{cost_id}
+	</update>
+	
+	<update id="update" parameterType="com.tarena.entity.Cost">
+		<![CDATA[
+			update cost set 
+			name=#{name}, 
+			base_duration=#{base_duration,jdbcType=NUMERIC},
+			base_cost=#{base_cost,jdbcType=NUMERIC},
+			unit_cost=#{unit_cost,jdbcType=NUMERIC},
+			descr=#{descr,jdbcType=VARCHAR},
+			cost_type=#{cost_type,jdbcType=CHAR}
+			where cost_id=#{cost_id}
+		]]>
+	</update>
+	
+	<delete id="delete" parameterType="int">
+		delete from cost where cost_id=#{id}
+	</delete>	
+	
+	<select id="findByPage" 
+		parameterType="com.tarena.entity.page.Page" 
+		resultType="com.tarena.entity.Cost">
+	<![CDATA[
+		select * from (
+			select a.*,rownum r from (
+				select * from cost order by cost_id
+			) a
+		) where r<#{end} and r>#{begin}
+	]]>
+	</select>
+	
+	<select id="findRows" resultType="int">
+		select count(*) from cost
+	</select>
+	
+</mapper>

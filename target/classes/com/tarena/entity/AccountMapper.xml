@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.AccountDao">
+
+	<select id="findByPage"
+		parameterType="com.tarena.entity.page.Page"
+		resultType="com.tarena.entity.Account">
+		select * from (
+			select a.*,ROWNUM r from (
+				select * from account
+				<where>
+					<if test="idcard_no!=null &amp;&amp; idcard_no.length()>0">
+						and idcard_no=#{idcard_no}
+					</if>
+					<if test="real_name!=null &amp;&amp; real_name.length()>0">
+						and real_name=#{real_name}
+					</if>
+					<if test="login_name!=null &amp;&amp; login_name.length()>0">
+						and login_name=#{login_name}
+					</if>
+					<if test='status!=null &amp;&amp; !status.equals("-1")'>
+						and status=#{status}
+					</if>
+				</where>
+				order by account_id
+			) a
+		) where r&lt;#{end} and r>#{begin} 
+	</select>
+	
+	<select id="findRows"
+		parameterType="com.tarena.entity.page.Page"
+		resultType="int">
+		select count(*) from account 
+		<where>
+			<if test="idcard_no!=null &amp;&amp; idcard_no.length()>0">
+				and idcard_no=#{idcard_no}
+			</if>
+			<if test="real_name!=null &amp;&amp; real_name.length()>0">
+				and real_name=#{real_name}
+			</if>
+			<if test="login_name!=null &amp;&amp; login_name.length()>0">
+				and login_name=#{login_name}
+			</if>
+			<if test='status!=null &amp;&amp; !status.equals("-1")'>
+				and status=#{status}
+			</if>
+		</where>
+	</select>
+
+	<update id="updateStatus" 
+		parameterType="com.tarena.entity.Account">
+		update account set status=#{status},
+		<choose>
+			<when test="status==0">
+				pause_date=null
+			</when>
+			<when test="status==1">
+				pause_date=SYSDATE
+			</when>
+			<otherwise>
+				close_date=SYSDATE
+			</otherwise>
+		</choose>
+		where account_id=#{account_id}
+	</update>
+
+	<select id="findById" 
+		parameterType="int" 
+		resultType="com.tarena.entity.Account">
+		select * from account where account_id=#{id}
+	</select>
+	
+	<update id="update" 
+		parameterType="com.tarena.entity.Account">
+	<![CDATA[
+		update account set 
+			real_name=#{real_name,jdbcType=VARCHAR},
+			telephone=#{telephone,jdbcType=VARCHAR},
+			email=#{email,jdbcType=VARCHAR},
+			occupation=#{occupation,jdbcType=VARCHAR},
+			gender=#{gender,jdbcType=CHAR},
+			mailaddress=#{mailaddress,jdbcType=VARCHAR},
+			zipcode=#{zipcode,jdbcType=CHAR},
+			qq=#{qq,jdbcType=VARCHAR}
+		where account_id=#{account_id}
+	]]>
+	</update>
+	
+	<insert id="save" 
+		parameterType="com.tarena.entity.Account">
+	<![CDATA[
+		insert into account values(
+			account_seq.nextval,
+			#{recommender_id,jdbcType=NUMERIC},
+			#{login_name,jdbcType=VARCHAR},
+			#{login_passwd,jdbcType=VARCHAR},
+			#{status,jdbcType=CHAR},
+			#{create_date,jdbcType=TIMESTAMP},
+			#{pause_date,jdbcType=TIMESTAMP},
+			#{close_date,jdbcType=TIMESTAMP},
+			#{real_name,jdbcType=VARCHAR},
+			#{idcard_no,jdbcType=VARCHAR},
+			#{birthdate,jdbcType=DATE},
+			#{gender,jdbcType=CHAR},
+			#{occupation,jdbcType=VARCHAR},
+			#{telephone,jdbcType=VARCHAR},
+			#{email,jdbcType=VARCHAR},
+			#{mailaddress,jdbcType=VARCHAR},
+			#{zipcode,jdbcType=CHAR},
+			#{qq,jdbcType=VARCHAR},
+			#{last_login_time,jdbcType=TIMESTAMP},
+			#{last_login_ip,jdbcType=VARCHAR}
+		)
+	]]>
+	</insert>
+	
+	<select id="findByIdcardNo" 
+		parameterType="string" 
+		resultType="com.tarena.entity.Account">
+		select * from account where idcard_no=#{idcardNo}
+	</select>	
+	
+</mapper>

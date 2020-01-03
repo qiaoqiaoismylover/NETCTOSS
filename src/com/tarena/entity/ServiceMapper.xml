@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.ServiceDao">
+
+	<select id="findByPage"
+		parameterType="com.tarena.entity.page.Page"
+		resultType="hashMap">
+		select * from (
+			select a.*,ROWNUM r from (
+				select 
+					s.*,
+					a.idcard_no,
+					a.real_name,
+					c.name as cost_name,
+					c.descr
+				from service s
+				inner join account a on a.account_id=s.account_id
+				inner join cost c on c.cost_id=s.cost_id
+				<where>
+					<if test="os_username!=null &amp;&amp; os_username.length()>0">
+						and s.os_username=#{os_username}
+					</if>
+					<if test="unix_host!=null &amp;&amp; unix_host.length()>0">
+						and s.unix_host=#{unix_host}
+					</if>
+					<if test="idcard_no!=null &amp;&amp; idcard_no.length()>0">
+						and a.idcard_no=#{idcard_no}
+					</if>
+					<if test='status!=null &amp;&amp; !status.equals("-1")'>
+						and s.status=#{status}
+					</if>
+				</where>
+				order by s.service_id
+			) a
+		) where r&lt;#{end} and r>#{begin}
+	</select>
+	
+	<select id="findRows"
+		parameterType="com.tarena.entity.page.Page"
+		resultType="int">
+		select 
+			count(*)
+		from service s
+		inner join account a on a.account_id=s.account_id
+		inner join cost c on c.cost_id=s.cost_id
+		<where>
+			<if test="os_username!=null &amp;&amp; os_username.length()>0">
+				and s.os_username=#{os_username}
+			</if>
+			<if test="unix_host!=null &amp;&amp; unix_host.length()>0">
+				and s.unix_host=#{unix_host}
+			</if>
+			<if test="idcard_no!=null &amp;&amp; idcard_no.length()>0">
+				and a.idcard_no=#{idcard_no}
+			</if>
+			<if test='status!=null &amp;&amp; !status.equals("-1")'>
+				and s.status=#{status}
+			</if>
+		</where>
+	</select>	
+	
+	<update id="updateStatus" 
+		parameterType="com.tarena.entity.Service">
+		update service set status=#{status},
+		<choose>
+			<when test="status==0">
+				pause_date=null
+			</when>
+			<when test="status==1">
+				pause_date=SYSDATE
+			</when>
+			<otherwise>
+				close_date=SYSDATE
+			</otherwise>
+		</choose>
+		where service_id=#{service_id}
+	</update>	
+	
+	<update id="pauseByAccount" parameterType="int">
+		update service set status='1',pause_date=SYSDATE
+		where account_id=#{accountId}
+	</update>
+	
+	<update id="deleteByAccount" parameterType="int">
+		update service set status='2',close_date=SYSDATE
+		where account_id=#{accountId}
+	</update>
+	
+	<select id="findById" 
+		parameterType="int" 
+		resultType="com.tarena.entity.Service">
+		select * from service where service_id=#{id}
+	</select>
+	
+	<insert id="save" parameterType="com.tarena.entity.Service">
+		insert into service values(
+			service_seq.nextval,
+			#{account_id,jdbcType=NUMERIC},
+			#{unix_host,jdbcType=VARCHAR},
+			#{os_username,jdbcType=VARCHAR},
+			#{login_passwd,jdbcType=VARCHAR},
+			#{status,jdbcType=VARCHAR},
+			#{create_date,jdbcType=TIMESTAMP},
+			#{pause_date,jdbcType=TIMESTAMP},
+			#{close_date,jdbcType=TIMESTAMP},
+			#{cost_id,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<insert id="update" parameterType="com.tarena.entity.Service">
+		
+		update service set 
+			cost_id=#{cost_id,jdbcType=NUMERIC}
+		where service_id=#{service_id}
+		
+	<!-- 	
+		insert into service_update_bak values(
+			service_update_bak_seq.nextval,
+			#{service_id,jdbcType=NUMERIC},
+			#{cost_id,jdbcType=NUMERIC}
+		) -->
+	</insert>
+	
+</mapper>

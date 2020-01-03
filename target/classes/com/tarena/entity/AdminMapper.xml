@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.AdminDao">
+
+	<select id="findByPage" 
+		parameterType="com.tarena.entity.page.Page" 
+		resultMap="adminMap">
+		select * from (
+			select a.*,ROWNUM r from (
+				select * from admin_info
+				where admin_id in (
+					select a.admin_id
+					from admin_info a
+					left join admin_role ar on a.admin_id=ar.admin_id
+					left join role_info ri on ri.role_id=ar.role_id
+					left join role_module rm on rm.role_id=ri.role_id
+					<where>
+						<if test="roleName!=null &amp;&amp; roleName.length()>0">
+							and ri.name like '%'||#{roleName}||'%'
+						</if>
+						<if test="moduleId!=null">
+							and rm.module_id=#{moduleId}
+						</if>
+					</where>
+				)
+				order by admin_id
+			) a
+		) where r&lt;#{end} and r>#{begin}
+	</select>
+	<select id="selectRoles" 
+		parameterType="int" 
+		resultType="com.tarena.entity.Role">
+		select * from role_info where role_id in (
+			select role_id from admin_role
+			where admin_id=#{id}
+		)
+	</select>
+	<resultMap id="adminMap" type="com.tarena.entity.Admin">
+		<id column="admin_id" property="admin_id" />
+		<collection ofType="com.tarena.entity.Role"
+			property="roles" javaType="java.util.ArrayList"
+			column="admin_id" select="selectRoles">
+		</collection>
+	</resultMap>
+	
+	<select id="findRows"
+		parameterType="com.tarena.entity.page.Page"
+		resultType="int">
+		select count(*) from admin_info
+		where admin_id in (
+			select a.admin_id
+			from admin_info a
+			left join admin_role ar on a.admin_id=ar.admin_id
+			left join role_info ri on ri.role_id=ar.role_id
+			left join role_module rm on rm.role_id=ri.role_id
+			<where>
+				<if test="roleName!=null &amp;&amp; roleName.length()>0">
+					and ri.name like '%'||#{roleName}||'%'
+				</if>
+				<if test="moduleId!=null">
+					and rm.module_id=#{moduleId}
+				</if>
+			</where>
+		)
+	</select>	
+	
+	<update id="updatePassword" parameterType="hashMap">
+		update admin_info set password=#{password}
+		where admin_id in 
+		<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id}
+		</foreach>
+	</update>
+	
+	<select id="findById" parameterType="int" resultMap="adminMap">
+		select * from admin_info where admin_id=#{id}
+	</select>
+	
+	<insert id="saveAdmin" parameterType="com.tarena.entity.Admin">
+		<selectKey keyProperty="admin_id" 
+			resultType="java.lang.Integer" 
+			order="BEFORE">
+			select admin_seq.nextval from dual
+		</selectKey>
+		insert into admin_info values(
+			#{admin_id},
+			#{admin_code,jdbcType=VARCHAR},
+			#{password,jdbcType=VARCHAR},
+			#{name,jdbcType=VARCHAR},
+			#{telephone,jdbcType=VARCHAR},
+			#{email,jdbcType=VARCHAR},
+			#{enrolldate,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	
+	<insert id="saveAdminRoles" parameterType="hashMap">
+		insert into admin_role values(
+			#{admin_id,jdbcType=NUMERIC},
+			#{role_id,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<update id="updateAdmin" parameterType="com.tarena.entity.Admin">
+		update admin_info set 
+			name=#{name,jdbcType=VARCHAR},
+			telephone=#{telephone,jdbcType=VARCHAR},
+			email=#{email,jdbcType=VARCHAR}
+		where admin_id=#{admin_id}
+	</update>
+	
+	<delete id="deleteAdminRoles" parameterType="int">
+		delete from admin_role where admin_id=#{admin_id}
+	</delete>
+	
+	<delete id="deleteAdmin" parameterType="int">
+		delete from admin_info where admin_id=#{id}
+	</delete>	
+	
+	<select id="findByCode" 
+		parameterType="string"
+		resultType="com.tarena.entity.Admin">
+		select * from admin_info where admin_code=#{adminCode}
+	</select>
+	
+	<select id="findModulesByAdmin" 
+		parameterType="int"
+		resultType="com.tarena.entity.Module">
+		select * from module_info where module_id in (
+			select rm.module_id
+			from admin_role ar
+			inner join role_info ri on ri.role_id=ar.role_id
+			inner join role_module rm on rm.role_id=ri.role_id
+			where ar.admin_id=#{adminId}
+		) order by module_id
+	</select>
+	
+</mapper>
