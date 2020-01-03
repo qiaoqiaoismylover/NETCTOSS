@@ -32,7 +32,19 @@
 	
 	<update id="updateStatus" 
 		parameterType="com.tarena.entity.Cost">
-		update cost set status=#{status} where cost_id=#{cost_id}
+		update cost set status=#{status},
+		<choose>
+			<when test="status==0">
+				STARTIME=SYSDATE
+			</when>
+			<when test="status==1">
+				STARTIME=null
+			</when>
+			<otherwise>
+				STARTIME=null
+			</otherwise>
+		</choose>
+		 where cost_id=#{cost_id}
 	</update>
 	
 	<update id="update" parameterType="com.tarena.entity.Cost">
